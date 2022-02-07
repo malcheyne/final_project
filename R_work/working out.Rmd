@@ -1,0 +1,69 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, message=FALSE}
+library(tidyverse)
+library(janitor)
+```
+
+```{r}
+green_space <- read_csv("C:/Users/Malcolm/Documents/Code/GitHub/de11_classnotes/week_12/day_5/final_project_briefs/scottish_household_survey/data/green_spaces.csv")
+
+community <- read_csv("C:/Users/Malcolm/Documents/Code/GitHub/de11_classnotes/week_12/day_5/final_project_briefs/scottish_household_survey/data/community_belonging.csv")
+
+neighbourhood <- read_csv("C:/Users/Malcolm/Documents/Code/GitHub/de11_classnotes/week_12/day_5/final_project_briefs/scottish_household_survey/data/neighbourhood_rating.csv")
+```
+
+```{r}
+green_space %>% 
+  arrange(DateCode)
+```
+
+
+```{r}
+green_space <- green_space %>% 
+  clean_names() 
+
+  unique(green_space$distance_to_nearest_green_or_blue_space)
+
+```
+
+```{r}
+community
+```
+
+
+```{r}
+neighbourhood
+```
+
+```{r}
+domestic <- read_csv("C:/Users/Malcolm/Documents/Code/GitHub/de11_classnotes/week_12/day_5/final_project_briefs/visit_scotland/data/regional_domestic_tourism.csv")
+
+accom <- read_csv("C:/Users/Malcolm/Documents/Code/GitHub/de11_classnotes/week_12/day_5/final_project_briefs/visit_scotland/data/scottish_accomodation_occupancy.csv")
+
+activites <- read_csv("C:/Users/Malcolm/Documents/Code/GitHub/de11_classnotes/week_12/day_5/final_project_briefs/visit_scotland/data/tourism_day_visits_activities.csv")
+```
+
+
+
+```{r}
+domestic
+```
+
+```{r}
+unique(domestic$`DateCode`)
+```
+
+
+```{r}
+accom
+```
+
+```{r}
+activites
+```
+
+
