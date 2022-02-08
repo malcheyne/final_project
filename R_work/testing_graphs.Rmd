@@ -1,0 +1,82 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r}
+green_spaces <- read_csv("../clean_data/cleaned_green_spaces.csv")
+
+community_belonging <- read_csv(
+  "../clean_data/cleaned_community_belonging.csv")
+
+neighbourhood_rating <- read_csv(
+  "../clean_data/cleaned_neighbourhood_rating.csv")
+```
+
+```{r}
+`%!in%` <- negate(`%in%`)
+
+green_spaces %>% 
+  filter(council_name %in% "Scotland",
+         measurement %in% "Percent",
+         age %in% "All",
+         gender %in% "All",
+         urban_rural %in% "All",
+         simd_quintiles %in% "All",
+         type_of_tenure %in% "All",
+         household_type %in% "All",
+         ethnicity %in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_col(aes(fill = walking_distance_to_nearest_greenspace),position = "dodge")
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Scotland",
+         measurement %in% "Percent",
+         #age %in% "All",
+        # gender %in% "All",
+         urban_rural %in% "Rural",
+         #simd_quintiles %in% "20% most deprived",
+        # type_of_tenure %in% "All",
+         #household_type %in% "All",
+         #ethnicity %in% "All"
+        ) %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_col(aes(fill = walking_distance_to_nearest_greenspace),position = "dodge")
+```
+
+```{r}
+unique(green_spaces$simd_quintiles)
+```
+
+```{r}
+unique(green_spaces$urban_rural)
+```
+
+
+```{r}
+summary(green_spaces)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Stirling",
+         measurement %in% "Percent",
+         age %in% "All",
+         gender %in% "All",
+         urban_rural %in% "All",
+         simd_quintiles %in% "All",
+         type_of_tenure %in% "All",
+         household_type %in% "All",
+         ethnicity %in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_col(aes(fill = walking_distance_to_nearest_greenspace),position = "dodge")
+```
+
