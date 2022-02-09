@@ -6,6 +6,7 @@ output: html_notebook
 ```{r, include=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(janitor)
 ```
 
 
@@ -17,11 +18,41 @@ community_belonging <- read_csv(
 
 neighbourhood_rating <- read_csv(
   "../clean_data/cleaned_neighbourhood_rating.csv")
+
+fuel_poverty <- read_csv(
+  "../raw_data/fuel_poverty.csv") %>% 
+  clean_names()
 ```
 
 ```{r}
-`%!in%` <- negate(`%in%`)
+pattern <-"^[0-9]{4}$"
 
+fuel_poverty %>% 
+  filter(feature_code == "S92000003",
+         measurement %in% "Percent",
+        str_detect(date_code, "^[0-9]{4}$"), 
+        type_of_dwelling %in% "All",
+        number_of_bedrooms %in% "All",
+        age_of_dwelling %in% "All",
+        type_of_tenure %in% "All",
+        household_type %in% "All") %>% 
+  # group_by(fuel_poverty) %>%
+  ggplot(aes(x = date_code, y = value), col = fuel_poverty) +
+  geom_line(aes(col = fuel_poverty, group = fuel_poverty)) +
+  geom_point(aes(col = fuel_poverty)) 
+```
+```{r}
+unique(fuel_poverty$fuel_poverty)
+```
+
+
+```{r}
+green_fact_spaces <- green_spaces %>% 
+  
+```
+
+
+```{r}
 green_spaces %>% 
   filter(council_name %in% "Scotland",
          measurement %in% "Percent",
@@ -33,8 +64,123 @@ green_spaces %>%
          household_type %in% "All",
          ethnicity %in% "All") %>% 
   ggplot(aes(x = year, y = value) ) +
-  geom_col(aes(fill = walking_distance_to_nearest_greenspace),position = "dodge")
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace))
 ```
+
+
+```{r}
+`%!in%` <- negate(`%in%`)
+
+green_spaces %>% 
+  filter(council_name %in% "Scotland",
+         measurement %in% "Percent",
+         age %in% "All",
+         gender %!in% "All",
+         urban_rural %in% "All",
+         simd_quintiles %in% "All",
+         type_of_tenure %in% "All",
+         household_type %in% "All",
+         ethnicity %in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~gender)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Scotland",
+         measurement %in% "Percent",
+         type_of_tenure %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~type_of_tenure)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Scotland",
+         measurement %in% "Percent",
+         urban_rural %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~urban_rural)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Glasgow City",
+         measurement %in% "Percent",
+         urban_rural %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~urban_rural)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Stirling",
+         measurement %in% "Percent",
+         urban_rural %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~urban_rural)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Orkney Islands",
+         measurement %in% "Percent",
+         urban_rural %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~urban_rural)
+```
+
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Scotland",
+         measurement %in% "Percent",
+         simd_quintiles %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~simd_quintiles)
+```
+
+```{r}
+green_spaces %>% 
+  filter(council_name %in% "Glasgow City",
+         measurement %in% "Percent",
+         simd_quintiles %!in% "All") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = walking_distance_to_nearest_greenspace)) +
+  geom_point(aes(col = walking_distance_to_nearest_greenspace)) +
+  facet_wrap(~simd_quintiles)
+```
+
+
+```{r}
+green_spaces %>% 
+  filter(council_name %!in% "Scotland",
+         measurement %in% "Percent",
+         #age %in% "All",
+         #gender %in% "All",
+         #urban_rural %in% "All",
+         #simd_quintiles %in% "All",
+         type_of_tenure %!in% "All",
+         #household_type %in% "All",
+         #ethnicity %in% "All"
+         )
+```
+
 
 ```{r}
 green_spaces %>% 
@@ -57,7 +203,7 @@ unique(green_spaces$simd_quintiles)
 ```
 
 ```{r}
-unique(green_spaces$urban_rural)
+unique(green_spaces$council_name)
 ```
 
 
