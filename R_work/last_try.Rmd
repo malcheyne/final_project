@@ -1,0 +1,96 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+```
+
+
+```{r}
+green_spaces <- read_csv("../clean_data/cleaned_green_spaces.csv")
+
+community_belonging <- read_csv(
+  "../clean_data/cleaned_community_belonging.csv")
+
+neighbourhood_rating <- read_csv(
+  "../clean_data/cleaned_neighbourhood_rating.csv")
+
+fuel_poverty <- read_csv(
+  "../raw_data/fuel_poverty.csv") %>% 
+  clean_names()
+
+council_areas <- read_csv("../raw_data/dz2001_codes_and_labels_21042020.csv") %>% 
+  clean_names()
+```
+
+```{r}
+`%!in%` <- negate(`%in%`)
+```
+
+
+```{r}
+poverty <- fuel_poverty %>% 
+  rename(area_codes = "feature_code",
+         year = "date_code") 
+
+poverty
+```
+
+
+```{r}
+areas <- council_areas %>% 
+  select(contains("ca")) %>% 
+  rename(area_codes = "ca",
+        council_name = "ca_name") %>% 
+  add_row(area_codes = "S92000003", council_name = "Scotland") %>% 
+  group_by(area_codes, council_name) %>% 
+  unique() %>% 
+  ungroup()
+
+areas
+```
+
+```{r}
+fuel <- inner_join(areas, poverty, by = "area_codes")
+
+fuel
+```
+```{r}
+fuel %>% 
+  filter(str_detect(year, "^[0-9]{4}$"),
+         measurement %in% "95% Lower Confidence Limit, Percent",
+         year == "2019")
+```
+
+
+```{r}
+fuel %>% 
+  filter(str_detect(year, "^[0-9]{4}$"),
+         measurement %in% "Percent",
+         across(age_of_dwelling:household_type, ~.x=="All")) %>% 
+  ggplot(aes(x = year, y = value), col = fuel_poverty) +
+  geom_line(aes(col = fuel_poverty, group = fuel_poverty)) +
+  geom_point(aes(col = fuel_poverty)) 
+```
+
+
+```{r}
+fuel_poverty %>% 
+  filter(str_detect(feature_code, "^S9"),
+         measurement == "Percent") %>% 
+  unique()
+        # type_of_dwelling %in% "All",
+        # number_of_bedrooms %in% "All",
+        # age_of_dwelling %in% "All",
+        # type_of_tenure %in% "All",
+        # household_type %in% "All")
+```
+
+
+
+

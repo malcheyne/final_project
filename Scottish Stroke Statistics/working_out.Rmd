@@ -1,0 +1,444 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+```
+
+```{r}
+`%!in%` <- negate(`%in%`)
+
+pal <- c("Male" = "#a6bddb", "Female" = "#fa9fb5")
+
+nhs <- c( "#ee9c00", "#ff0000", 
+         "#b80068", "#00a15f",
+         "#0391bf", "#67bf29", "#00684d")
+
+hb <- c('#a6cee3','#1f78b4','#b2df8a',
+         '#33a02c','#fb9a99','#e31a1c',
+         '#fdbf6f','#ff7f00','#cab2d6',
+         '#6a3d9a','#525252')
+```
+
+
+```{r}
+council_areas <- read_csv("../raw_data/dz2001_codes_and_labels_21042020.csv") %>% 
+  clean_names()
+```
+
+
+```{r}
+areas <- council_areas %>% 
+  select(contains("ca")) %>% 
+  rename(area_codes = "ca",
+        council_name = "ca_name") %>% 
+  add_row(area_codes = "S92000003", council_name = "Scotland") %>% 
+  add_row(area_codes = "S12000046", council_name = "Glasgow City") %>%
+  add_row(area_codes = "S12000044", council_name = "North Lanarkshire") %>%
+  group_by(area_codes, council_name) %>% 
+  unique() %>% 
+  ungroup()
+
+areas
+```
+
+```{r}
+health_board <- council_areas %>% 
+  select(contains("hb")) %>% 
+  rename(health_board = "hb") %>% 
+  add_row(health_board = "S92000003", hb_name = "Scotland") %>%
+  add_row(health_board = "S08000018", hb_name = "NHS Fife") %>%
+  add_row(health_board = "S08000021", hb_name = "NHS Greater Glasgow and Clyde") %>%
+  add_row(health_board = "S08000023", hb_name = "NHS Lanarkshire") %>%
+  group_by(health_board, hb_name) %>% 
+  unique() %>% 
+  ungroup()
+
+health_board
+```
+```{r}
+hb_stroke <- read_csv("../raw_data/stroke_activitybyhbr.csv") %>% 
+  clean_names() %>% 
+  rename(health_board = "hbr")
+```
+
+
+```{r}
+health_board_stroke <- right_join(health_board, hb_stroke, by = "health_board") %>% 
+  select(hb_name, financial_year, admission_type, age_group, sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
+  mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
+         financial_year = as.numeric(financial_year))
+   # filter(is.na(hb_name))
+
+health_board_stroke
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "Scotland",
+          across(admission_type:sex, ~.x=="All")) %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges, 
+             col = diagnosis)) +
+  geom_point() +
+  geom_line(aes(group = diagnosis)) +
+  scale_colour_manual(values = nhs) +
+  labs(title = "Common Stroke Diagnosis in Scotland \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Types of Strokes\n") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "Scotland",
+          across(admission_type:age_group, ~.x=="All"),
+         sex %!in% "All") %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges, 
+             col = sex)) +
+  geom_point() +
+  geom_line(aes(group = sex)) +
+  scale_colour_manual(values = pal) +
+  labs(title = "Common Stroke Diagnosis in Scotland by Gender\n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Strokes by Gender\n") +
+  #scale_x_continuous(breaks = c(1, 10)) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "Scotland",
+          across(age_group:sex, ~.x=="All"),
+         admission_type %!in% "All") %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges, 
+             col = admission_type)) +
+  geom_point() +
+  geom_line(aes(group = admission_type)) +
+  scale_colour_manual(values = nhs) +
+  labs(title = "Common Stroke Diagnosis in Scotland by Admission Types\n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Admission Types\n") +
+  #scale_x_continuous(breaks = c(1, 10)) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "Scotland",
+         sex %in% "All",
+         admission_type %in% "All",
+         age_group %!in% "All") %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges, 
+             col = age_group)) +
+  geom_point() +
+  geom_line(aes(group = age_group)) +
+  scale_colour_manual(values = nhs) +
+  labs(title = "Common Stroke Diagnosis in Scotland by Age Group\n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Age Group\n") +
+  #scale_x_continuous(breaks = c(1, 10)) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %!in% c("Scotland", "NHS Western Isles",
+                         "NHS Orkney", "NHS Shetland"),
+         across(admission_type:sex, ~.x=="All")) %>% 
+  # group_by(hb_name, financial_year) %>%
+  # mutate(number_of_discharges = count(number_of_discharges)) %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges,
+             group = hb_name, col = hb_name )) +
+  geom_point() +
+  geom_line() +
+  scale_colour_manual(values = hb) +
+  # geom_text(aes(label = "Borders", x = 2020, y = 500), color = "red") +
+  # geom_text(aes(label = "Greater \nGlasgow", x = 2020, y = 7000), color = "grey40") +
+  # geom_text(aes(label = "Dumfries", x = 2020, y = 1000), color = "grey40") +
+  # geom_text(aes(label = "Lothian", x = 2020, y = 5200), color = "grey40") +
+  # geom_text(aes(label = "Lanarkshire", x = 2019.5, y = 4500), color = "grey40") +
+  labs(title = "Common Stroke Diagnosis by Health Boards \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %!in% c("Scotland", "NHS Western Isles",
+                         "NHS Orkney", "NHS Shetland"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges,
+             group = hb_name, col = hb_name )) +
+  geom_point() +
+  geom_line() +
+  scale_colour_manual(values = hb, guide = "none") +
+  geom_text(aes(label = "Borders", 
+                x = 2019, y = 600), color = "#1f78b4") +
+  geom_text(aes(label = "Greater \nGlasgow", 
+                x = 2019, y = 8000), color = "#fdbf6f") +
+  geom_text(aes(label = "Dumfries", 
+                x = 2019, y = 1000), color = "#b2df8a") +
+  geom_text(aes(label = "Lothian", 
+                x = 2019, y = 4200), color = "#6a3d9a") +
+  geom_text(aes(label = "Lanarkshire", 
+                x = 2019, y = 5000), color = "#cab2d6") +
+  geom_text(aes(label = "Forth Valley", 
+                x = 2019, y = 1400), color = "#fb9a99") +
+  geom_text(aes(label = "Grampian ", 
+                x = 2019, y = 1750), color = "#e31a1c") +
+  geom_text(aes(label = "Highland", 
+                x = 2019, y = 2100), color = "#ff7f00") +
+  geom_text(aes(label = "Fife", 
+                x = 2019, y = 2550), color = "#33a02c") +
+  geom_text(aes(label = "Tayside", 
+                x = 2019, y = 2900), color = "#525252") +
+  geom_text(aes(label = "Ayrshire", 
+                x = 2019, y = 3300), color = "#a6cee3") +
+   scale_x_continuous(limits = c(2009, 2019.5), 
+                      breaks = c(2010, 2012, 2014, 2016, 2018)) +
+  labs(title = "Cerebrovascular Disease Diagnosis by Health Boards \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+
+
+  "NHS Grampian" : Aberdeen, Aberdeenshire and Moray. 
+  
+ "NHS Tayside" :  Angus, the City of Dundee and Perth and Kinross.
+ 
+ NHS Forth Valley : Clackmannanshire, Falkirk and Stirling 
+ 
+"NHS Ayrshire and Arran" : North Ayrshire South Ayrshire East Ayrshire
+
+ "NHS Lothian" : City of Edinburgh, East Lothian, Midlothian and West Lothian 
+ 
+ NHS Greater Glasgow and Clyde : City of Glasgow, East Dunbartonshire, East Renfrewshire, Inverclyde, Renfrewshire and West Dunbartonshire. 
+ 
+ NHS Lanarkshire : North Lanarkshire and South Lanarkshire
+
+
+
+
+
+```{r}
+ca_stroke <- read_csv("../raw_data/stroke_activitybyca.csv") %>% 
+  clean_names() %>% 
+  rename(area_codes = "ca")
+```
+
+```{r}
+council_stroke <- right_join(areas, ca_stroke, by = "area_codes") %>% 
+  select(council_name, financial_year, admission_type, age_group, sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
+  mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
+         financial_year = as.numeric(financial_year))
+   # filter(is.na(council_name))
+
+council_stroke
+```
+
+
+```{r}
+grampian <- health_board_stroke %>% 
+  filter(hb_name %in% "NHS Grampian",
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  rename(council_name = hb_name)
+
+
+nhs_grampian <-  bind_rows(council_stroke, grampian)
+
+nhs_grampian %>% 
+   filter(council_name %in% c("Aberdeen City", 
+                        "Aberdeenshire", "Moray", 
+                        "NHS Grampian"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges)) +
+  geom_point(aes(group = council_name, col = council_name)) +
+  geom_line(aes(group = council_name, col = council_name)) 
+
+```
+
+```{r}
+nhs_grampian %>% 
+   filter(council_name %in% c("Aberdeen City", 
+                        "Aberdeenshire", "Moray"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges))
+```
+
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "NHS Grampian",
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  select(hb_name, financial_year, number_of_discharges) 
+```
+
+NHS Grampian has an extra 6 in 2018/19 compared to the local authority's 
+
+```{r}
+unique(health_board_stroke$hb_name)
+```
+
+```{r}
+unique(areas$council_name)
+```
+"NHS Lothian" : City of Edinburgh, East Lothian, Midlothian and West Lothian 
+
+```{r}
+lothian <- health_board_stroke %>% 
+  filter(hb_name %in% "NHS Lothian",
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  rename(council_name = hb_name)
+
+
+nhs_lothian <-  bind_rows(council_stroke, lothian)
+
+nhs_lothian %>% 
+   filter(council_name %in% c("City of Edinburgh", 
+                        "East Lothian", "Midlothian", 
+                        "West Lothian", "NHS Lothian"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges)) +
+  geom_point(aes(group = council_name, col = council_name)) +
+  geom_line(aes(group = council_name, col = council_name)) 
+
+```
+
+```{r}
+nhs_lothian %>% 
+   filter(council_name %in% c("City of Edinburgh", 
+                        "East Lothian", "Midlothian", 
+                        "West Lothian"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges))
+```
+
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "NHS Lothian",
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  select(hb_name, financial_year, number_of_discharges) 
+```
+
+NHS Lothian has an extra 5 in 2017/18 and an extra 24 in 2018/19 compared to the local authority's
+
+
+```{r}
+unique(nhs_grampian$council_name)
+```
+
+
+health_board_stroke %>% 
+  filter(hb_name %!in% c("Scotland", "NHS Western Isles",
+                         "NHS Orkney", "NHS Shetland"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges,
+             group = hb_name, col = hb_name )) +
+  geom_point() +
+  geom_line() +
+  scale_colour_manual(values = hb, guide = "none") +
+  geom_text(aes(label = "Borders", 
+                x = 2019, y = 600), color = "#1f78b4") +
+  geom_text(aes(label = "Greater \nGlasgow", 
+                x = 2019, y = 8000), color = "#fdbf6f") +
+  geom_text(aes(label = "Dumfries", 
+                x = 2019, y = 1000), color = "#b2df8a") +
+  geom_text(aes(label = "Lothian", 
+                x = 2019, y = 4200), color = "#6a3d9a") +
+  geom_text(aes(label = "Lanarkshire", 
+                x = 2019, y = 5000), color = "#cab2d6") +
+  geom_text(aes(label = "Forth Valley", 
+                x = 2019, y = 1400), color = "#fb9a99") +
+  geom_text(aes(label = "Grampian ", 
+                x = 2019, y = 1750), color = "#e31a1c") +
+  geom_text(aes(label = "Highland", 
+                x = 2019, y = 2100), color = "#ff7f00") +
+  geom_text(aes(label = "Fife", 
+                x = 2019, y = 2550), color = "#33a02c") +
+  geom_text(aes(label = "Tayside", 
+                x = 2019, y = 2900), color = "#525252") +
+  geom_text(aes(label = "Ayrshire", 
+                x = 2019, y = 3300), color = "#a6cee3") +
+   scale_x_continuous(limits = c(2009, 2019.5), 
+                      breaks = c(2010, 2012, 2014, 2016, 2018)) +
+  labs(title = "Cerebrovascular Disease Diagnosis by Health Boards \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+
+```{r}
+unique(hb_stroke$hbr)
+
+unique(hb_stroke$financial_year)
+
+unique(hb_stroke$age_group)
+```
+
+```{r}
+unique(ca_stroke$Diagnosis)
+```
+
+
+
+
+```{r}
+stroke_mortalitybyca <- read_csv("../raw_data/stroke_mortalitybyca.csv") %>% 
+  clean_names()
+```
+
+```{r}
+unique(stroke_mortalitybyca$Diagnosis)
+```
+
+```{r}
+stroke_mortalitybyca %>% 
+  
+```
+
+

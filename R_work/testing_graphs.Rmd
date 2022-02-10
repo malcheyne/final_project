@@ -25,6 +25,11 @@ fuel_poverty <- read_csv(
 ```
 
 ```{r}
+`%!in%` <- negate(`%in%`)
+```
+
+
+```{r}
 pattern <-"^[0-9]{4}$"
 
 fuel_poverty %>% 
@@ -41,13 +46,14 @@ fuel_poverty %>%
   geom_line(aes(col = fuel_poverty, group = fuel_poverty)) +
   geom_point(aes(col = fuel_poverty)) 
 ```
+
 ```{r}
 unique(fuel_poverty$fuel_poverty)
 ```
 
 
 ```{r}
-green_fact_spaces <- green_spaces %>% 
+#green_fact_spaces <- green_spaces %>% 
   
 ```
 
@@ -224,5 +230,52 @@ green_spaces %>%
          ethnicity %in% "All") %>% 
   ggplot(aes(x = year, y = value) ) +
   geom_col(aes(fill = walking_distance_to_nearest_greenspace),position = "dodge")
+```
+
+```{r}
+neighbourhood_rating %>% 
+  filter(council_name %in% c("Aberdeen City", "Aberdeenshire", "Angus", "Argyll and Bute"),
+         gender %!in% "All",
+         measurement == "Percent",
+         neighbourhood_rating %in% "Very good") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = neighbourhood_rating)) +
+  geom_point(aes(col = neighbourhood_rating)) +
+  facet_wrap(~council_name)
+```
+
+```{r}
+neighbourhood_rating %>% 
+   
+  filter(council_name %in% c("City of Edinburgh", "Clackmannanshire", "Dumfries and Galloway", "Dundee City"),
+         urban_rural %!in% "All",
+         measurement == "Percent") %>% 
+  select(area_codes, council_name, year, measurement, value, neighbourhood_rating, urban_rural) %>%
+  ggplot(aes(x = year, y = value), group = neighbourhood_rating ) +
+  geom_line(aes(col = neighbourhood_rating, group = urban_rural)) +
+  geom_point(aes(col = neighbourhood_rating, group = urban_rural)) +
+  facet_wrap(~council_name)
+```
+
+```{r}
+neighbourhood_rating %>% 
+  filter(council_name %in% c("Aberdeen City", "Aberdeenshire", "Angus", "Argyll and Bute"),
+         gender %!in% "All",
+         measurement == "Percent",
+         neighbourhood_rating %in% "Very good") %>% 
+  ggplot(aes(x = year, y = value) ) +
+  geom_line(aes(col = neighbourhood_rating)) +
+  geom_point(aes(col = neighbourhood_rating)) +
+  facet_wrap(~council_name)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+unique(neighbourhood_rating$council_name)
 ```
 
