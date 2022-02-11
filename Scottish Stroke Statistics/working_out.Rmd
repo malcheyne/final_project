@@ -53,7 +53,8 @@ health_board <- council_areas %>%
   rename(health_board = "hb") %>% 
   add_row(health_board = "S92000003", hb_name = "Scotland") %>%
   add_row(health_board = "S08000018", hb_name = "NHS Fife") %>%
-  add_row(health_board = "S08000021", hb_name = "NHS Greater Glasgow and Clyde") %>%
+  add_row(health_board = "S08000021", 
+          hb_name = "NHS Greater Glasgow and Clyde") %>%
   add_row(health_board = "S08000023", hb_name = "NHS Lanarkshire") %>%
   group_by(health_board, hb_name) %>% 
   unique() %>% 
@@ -69,14 +70,23 @@ hb_stroke <- read_csv("../raw_data/stroke_activitybyhbr.csv") %>%
 
 
 ```{r}
-health_board_stroke <- right_join(health_board, hb_stroke, by = "health_board") %>% 
-  select(hb_name, financial_year, admission_type, age_group, sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
+health_board_stroke <- right_join(health_board, 
+                                  hb_stroke, 
+                                  by = "health_board") %>% 
+  select(hb_name, financial_year, admission_type, age_group, sex, 
+         diagnosis, number_of_discharges, crude_rate, easr) %>%
   mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
-         financial_year = as.numeric(financial_year))
+         financial_year = as.numeric(financial_year)) %>% 
+  mutate(age_group = factor(age_group, 
+                            levels = c("All", "0-44 years", 
+                                       "45-64 years", "65-74 years", 
+                                       "under75 years", "75plus years" )))
    # filter(is.na(hb_name))
 
 health_board_stroke
 ```
+
+# What is the most common stroke diagnosis in Scotland?
 
 ```{r}
 health_board_stroke %>% 
@@ -95,6 +105,9 @@ health_board_stroke %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+
+# Differences in stroke diagnoses between different demographics
+
 ```{r}
 health_board_stroke %>% 
   filter(hb_name %in% "Scotland",
@@ -110,7 +123,6 @@ health_board_stroke %>%
        x = "Financial Year",
        y = "Number of Discharges \n",
        colour = "Strokes by Gender\n") +
-  #scale_x_continuous(breaks = c(1, 10)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
@@ -130,7 +142,6 @@ health_board_stroke %>%
        x = "Financial Year",
        y = "Number of Discharges \n",
        colour = "Admission Types\n") +
-  #scale_x_continuous(breaks = c(1, 10)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
@@ -140,7 +151,7 @@ health_board_stroke %>%
   filter(hb_name %in% "Scotland",
          sex %in% "All",
          admission_type %in% "All",
-         age_group %!in% "All") %>% 
+         age_group %!in% c("All", "under75 years")) %>% 
   ggplot(aes(x = financial_year, 
              y = number_of_discharges, 
              col = age_group)) +
@@ -151,9 +162,11 @@ health_board_stroke %>%
        x = "Financial Year",
        y = "Number of Discharges \n",
        colour = "Age Group\n") +
-  #scale_x_continuous(breaks = c(1, 10)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
+```
+```{r}
+unique(health_board_stroke$hb_name)
 ```
 
 
@@ -161,26 +174,28 @@ health_board_stroke %>%
 health_board_stroke %>% 
   filter(hb_name %!in% c("Scotland", "NHS Western Isles",
                          "NHS Orkney", "NHS Shetland"),
-         across(admission_type:sex, ~.x=="All")) %>% 
-  # group_by(hb_name, financial_year) %>%
-  # mutate(number_of_discharges = count(number_of_discharges)) %>% 
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
   ggplot(aes(x = financial_year, 
              y = number_of_discharges,
              group = hb_name, col = hb_name )) +
   geom_point() +
   geom_line() +
-  scale_colour_manual(values = hb) +
-  # geom_text(aes(label = "Borders", x = 2020, y = 500), color = "red") +
-  # geom_text(aes(label = "Greater \nGlasgow", x = 2020, y = 7000), color = "grey40") +
-  # geom_text(aes(label = "Dumfries", x = 2020, y = 1000), color = "grey40") +
-  # geom_text(aes(label = "Lothian", x = 2020, y = 5200), color = "grey40") +
-  # geom_text(aes(label = "Lanarkshire", x = 2019.5, y = 4500), color = "grey40") +
+  scale_colour_manual(values = hb,
+                      labels = c("Ayrshire", "Borders", "Dumfries &\n Galloway",
+                                 "Fife", "Forth Valley", "Grampian",
+                                 "Greater\n Glasgow", "Highland", "Lanarkshire",
+                                 "Lothian", "Tayside")) +
   labs(title = "Common Stroke Diagnosis by Health Boards \n",
        x = "Financial Year",
-       y = "Number of Discharges \n") +
+       y = "Number of Discharges \n",
+       colour = "Health Boards\n") +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
+
+Left out the NHS Western Isles, NHS Orkney, NHS Shetland, Subarachnoid Haemorrhage, TIAs and related syndromes doe to very small numbers
 
 ```{r}
 health_board_stroke %>% 
@@ -244,7 +259,7 @@ health_board_stroke %>%
 
 
 
-
+# Differences in number of cases by health board vs by local authority
 
 ```{r}
 ca_stroke <- read_csv("../raw_data/stroke_activitybyca.csv") %>% 
@@ -254,13 +269,21 @@ ca_stroke <- read_csv("../raw_data/stroke_activitybyca.csv") %>%
 
 ```{r}
 council_stroke <- right_join(areas, ca_stroke, by = "area_codes") %>% 
-  select(council_name, financial_year, admission_type, age_group, sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
+  select(council_name, financial_year, admission_type, age_group, 
+         sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
   mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
-         financial_year = as.numeric(financial_year))
+         financial_year = as.numeric(financial_year)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(age_group = factor(age_group, 
+                            levels = c("All", "0-44 years", 
+                                       "45-64 years", "65-74 years", 
+                                       "under75 years", "75plus years" )))
+
    # filter(is.na(council_name))
 
 council_stroke
 ```
+
 
 
 ```{r}
@@ -279,11 +302,15 @@ nhs_grampian %>%
                         "NHS Grampian"),
          across(admission_type:sex, ~.x=="All"),
          diagnosis %in% "Cerebrovascular Disease") %>% 
-  
   ggplot(aes(x = financial_year, 
              y = number_of_discharges)) +
   geom_point(aes(group = council_name, col = council_name)) +
-  geom_line(aes(group = council_name, col = council_name)) 
+  geom_line(aes(group = council_name, col = council_name)) +
+  labs(title = "Cerebrovascular Disease in NHS Grampian \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Local Authority\n") +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -306,16 +333,28 @@ health_board_stroke %>%
   select(hb_name, financial_year, number_of_discharges) 
 ```
 
-NHS Grampian has an extra 6 in 2018/19 compared to the local authority's 
+For Cerebrovascular Disease NHS Grampian has an extra 6, 0.3% in 2018/19 compared to the local authority's 
 
 ```{r}
-unique(health_board_stroke$hb_name)
+nhs_grampian %>% 
+   filter(council_name %in% c("Aberdeen City", 
+                        "Aberdeenshire", "Moray"),
+         across(admission_type:sex, ~.x=="All")) %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges))
 ```
 
+
 ```{r}
-unique(areas$council_name)
+health_board_stroke %>% 
+  filter(hb_name %in% "NHS Grampian",
+         across(admission_type:sex, ~.x=="All")) %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges))
 ```
-"NHS Lothian" : City of Edinburgh, East Lothian, Midlothian and West Lothian 
+
+NHS Grampian across all the four types of strokes has an extra 8, 0.2% in 2016/17 and an extra 6, 0.2% in 2018/19 compared to the local authority's
+
 
 ```{r}
 lothian <- health_board_stroke %>% 
@@ -333,11 +372,15 @@ nhs_lothian %>%
                         "West Lothian", "NHS Lothian"),
          across(admission_type:sex, ~.x=="All"),
          diagnosis %in% "Cerebrovascular Disease") %>% 
-  
   ggplot(aes(x = financial_year, 
              y = number_of_discharges)) +
   geom_point(aes(group = council_name, col = council_name)) +
-  geom_line(aes(group = council_name, col = council_name)) 
+  geom_line(aes(group = council_name, col = council_name)) +
+  labs(title = "Cerebrovascular Disease in NHS Lothian \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Local Authority\n") +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -361,7 +404,100 @@ health_board_stroke %>%
   select(hb_name, financial_year, number_of_discharges) 
 ```
 
-NHS Lothian has an extra 5 in 2017/18 and an extra 24 in 2018/19 compared to the local authority's
+For Cerebrovascular Disease NHS Lothian has an extra 5, 0.1% in 2017/18 and an extra 24, 0.6% in 2018/19 compared to the local authority's
+
+
+```{r}
+nhs_lothian %>% 
+   filter(council_name %in% c("City of Edinburgh", 
+                        "East Lothian", "Midlothian", 
+                        "West Lothian"),
+         across(admission_type:sex, ~.x=="All")) %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges))
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "NHS Lothian",
+         across(admission_type:sex, ~.x=="All")) %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges)) 
+```
+NHS Lothian across all the four types of strokes has an extra 8, 0.1% in 2017/18 and an extra 45, 0.6% in 2018/19 compared to the local authority's
+
+
+
+```{r}
+glasgow <- health_board_stroke %>% 
+  filter(hb_name %in% "NHS Greater Glasgow and Clyde",
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>% 
+  rename(council_name = hb_name)
+
+
+nhs_glasgow <-  bind_rows(council_stroke, glasgow)
+
+nhs_glasgow %>% 
+   filter(council_name %in% c("Glasgow City", 
+                        "East Dunbartonshire", "East Renfrewshire", 
+                        "Inverclyde", "Renfrewshire", "West Dunbartonshire",
+                        "NHS Greater Glasgow and Clyde"),
+         across(admission_type:sex, ~.x=="All"),
+         diagnosis %in% "Cerebrovascular Disease") %>%
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges)) +
+  geom_point(aes(group = council_name, col = council_name)) +
+  geom_line(aes(group = council_name, col = council_name)) +
+  labs(title = "Cerebrovascular Disease in NHS Greater Glasgow \n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Local Authority\n") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+```{r}
+nhs_glasgow %>% 
+   filter(council_name %in% c("Glasgow City", 
+                        "East Dunbartonshire", "East Renfrewshire", 
+                        "Inverclyde", "Renfrewshire", "West Dunbartonshire"),
+         across(admission_type:sex, ~.x=="All")) %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges))
+```
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "NHS Greater Glasgow and Clyde",
+         across(admission_type:sex, ~.x=="All")) %>% 
+  group_by(financial_year) %>% 
+  summarise(sum_of_discharges = sum(number_of_discharges)) 
+```
+
+NHS Greater Glasgow and Clyde across all the four types of strokes has an extra 3, 0.02% in 2016/17, an extra 14, 0.08% in 2017/18 and an extra 86, 0.5% in 2018/19 compared to the local authority's
+
+
+
+
+
+```{r}
+ # health_board_stroke %>% 
+ #  filter(across(admission_type:sex, ~.x=="All")) %>% 
+ #  group_by(hb_name, financial_year) %>% 
+ #  summarise(sum_hb_discharges = sum(number_of_discharges))
+```
+
+```{r}
+# council_stroke %>% 
+#   filter(across(admission_type:sex, ~.x=="All")) %>% 
+#   group_by(hb_name, financial_year) %>% 
+#   summarise(sum_hb_discharges = sum(number_of_discharges))
+```
+
+
+
 
 
 ```{r}
@@ -369,76 +505,158 @@ unique(nhs_grampian$council_name)
 ```
 
 
-health_board_stroke %>% 
+
+
+
+
+
+
+# Differences in mortality rates for different types of stroke
+
+```{r}
+stroke_mortality_hb <- read_csv("../raw_data/stroke_mortalitybyhbr.csv") %>% 
+  clean_names() %>% 
+  rename(health_board = "hbr")
+```
+
+```{r}
+health_board_mortality <- right_join(health_board, 
+                                     stroke_mortality_hb,
+                                     by = "health_board") %>% 
+  select(hb_name, year, age_group, sex, 
+         diagnosis, number_of_deaths, crude_rate, easr) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(age_group = factor(age_group, 
+                            levels = c("All", "0-44 years", 
+                                       "45-64 years", "65-74 years", 
+                                       "under75 years", "75plus years" )))
+  
+   # filter(is.na(hb_name))
+
+health_board_mortality
+```
+
+```{r}
+unique(health_board_mortality$age_group)
+```
+
+
+```{r}
+health_board_mortality %>% 
+  filter(hb_name %in% "Scotland",
+          across(age_group:sex, ~.x=="All")) %>% 
+  ggplot(aes(x = year, 
+             y = number_of_deaths, 
+             col = diagnosis)) +
+  geom_point() +
+  geom_line(aes(group = diagnosis)) +
+  scale_colour_manual(values = nhs) +
+  labs(title = "Stroke Mortality Rate in Scotland \n",
+       x = "Financial Year",
+       y = "Mortality Rate \n",
+       colour = "Types of Strokes\n") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+Again Subarachnoid Haemorrhage, TIAs and related syndromes very small numbers so will leave out.
+
+
+```{r}
+health_board_mortality %>% 
+  filter(hb_name %in% "Scotland",
+          across(age_group, ~.x=="All"),
+         sex %!in% "All",
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
+  ggplot(aes(x = year, 
+             y = number_of_deaths, 
+             col = sex)) +
+  geom_point() +
+  geom_line(aes(group = sex)) +
+  scale_colour_manual(values = pal) +
+  labs(title = "Stroke Mortality Rate in Scotland by Gender\n",
+       x = "Financial Year",
+       y = "Mortality Rate \n",
+       colour = "Strokes by Gender\n") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+
+```{r}
+health_board_mortality %>% 
+  filter(hb_name %in% "Scotland",
+         sex %in% "All",
+         age_group %!in% c("All", "under75 years"),
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
+  ggplot(aes(x = year, 
+             y = number_of_deaths, 
+             col = age_group)) +
+  geom_point() +
+  geom_line(aes(group = age_group)) +
+  scale_colour_manual(values = nhs) +
+  labs(title = "Stroke Mortality Rate in Scotland by Age Group\n",
+       x = "Financial Year",
+       y = "Mortality Rate \n",
+       colour = "Age Group\n") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+
+```{r}
+health_board_mortality %>% 
   filter(hb_name %!in% c("Scotland", "NHS Western Isles",
                          "NHS Orkney", "NHS Shetland"),
-         across(admission_type:sex, ~.x=="All"),
-         diagnosis %in% "Cerebrovascular Disease") %>% 
-  ggplot(aes(x = financial_year, 
-             y = number_of_discharges,
+         across(age_group:sex, ~.x=="All"),
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
+  ggplot(aes(x = year, 
+             y = number_of_deaths,
              group = hb_name, col = hb_name )) +
   geom_point() +
   geom_line() +
-  scale_colour_manual(values = hb, guide = "none") +
-  geom_text(aes(label = "Borders", 
-                x = 2019, y = 600), color = "#1f78b4") +
-  geom_text(aes(label = "Greater \nGlasgow", 
-                x = 2019, y = 8000), color = "#fdbf6f") +
-  geom_text(aes(label = "Dumfries", 
-                x = 2019, y = 1000), color = "#b2df8a") +
-  geom_text(aes(label = "Lothian", 
-                x = 2019, y = 4200), color = "#6a3d9a") +
-  geom_text(aes(label = "Lanarkshire", 
-                x = 2019, y = 5000), color = "#cab2d6") +
-  geom_text(aes(label = "Forth Valley", 
-                x = 2019, y = 1400), color = "#fb9a99") +
-  geom_text(aes(label = "Grampian ", 
-                x = 2019, y = 1750), color = "#e31a1c") +
-  geom_text(aes(label = "Highland", 
-                x = 2019, y = 2100), color = "#ff7f00") +
-  geom_text(aes(label = "Fife", 
-                x = 2019, y = 2550), color = "#33a02c") +
-  geom_text(aes(label = "Tayside", 
-                x = 2019, y = 2900), color = "#525252") +
-  geom_text(aes(label = "Ayrshire", 
-                x = 2019, y = 3300), color = "#a6cee3") +
-   scale_x_continuous(limits = c(2009, 2019.5), 
-                      breaks = c(2010, 2012, 2014, 2016, 2018)) +
-  labs(title = "Cerebrovascular Disease Diagnosis by Health Boards \n",
+  scale_colour_manual(values = hb,
+                      labels = c("Ayrshire", "Borders", "Dumfries &\n Galloway",
+                                 "Fife", "Forth Valley", "Grampian",
+                                 "Greater\n Glasgow", "Highland", "Lanarkshire",
+                                 "Lothian", "Tayside")) +
+  labs(title = "Stroke Mortality Rate by Health Boards \n",
        x = "Financial Year",
-       y = "Number of Discharges \n") +
-  theme(plot.title = element_text(hjust = 0.5))
-
-
-
-
-```{r}
-unique(hb_stroke$hbr)
-
-unique(hb_stroke$financial_year)
-
-unique(hb_stroke$age_group)
-```
-
-```{r}
-unique(ca_stroke$Diagnosis)
+       y = "Mortality Rate \n",
+       colour = "Health Boards\n") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
 ```
 
 
 
 
+
 ```{r}
-stroke_mortalitybyca <- read_csv("../raw_data/stroke_mortalitybyca.csv") %>% 
+stroke_mortality_ca <- read_csv("../raw_data/stroke_mortalitybyca.csv") %>% 
   clean_names()
 ```
 
-```{r}
-unique(stroke_mortalitybyca$Diagnosis)
-```
+
 
 ```{r}
 stroke_mortalitybyca %>% 
   
 ```
 
+```{r}
+hb_stroke <- read_csv("../raw_data/stroke_activitybyhbr.csv") %>% 
+  clean_names() %>% 
+  rename(health_board = "hbr")
+```
 
+
+```{r}
+health_board_stroke <- right_join(health_board, hb_stroke, by = "health_board") %>% 
+  select(hb_name, financial_year, admission_type, age_group, sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
+  mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
+         financial_year = as.numeric(financial_year))
+   # filter(is.na(hb_name))
+
+health_board_stroke
+```
