@@ -10,7 +10,7 @@ library(ggplot2)
 library(janitor)
 ```
 
-```{r}
+```{r, include=FALSE}
 `%!in%` <- negate(`%in%`)
 
 pal <- c("Male" = "#a6bddb", "Female" = "#fa9fb5")
@@ -24,6 +24,48 @@ hb <- c('#a6cee3','#1f78b4','#b2df8a',
          '#fdbf6f','#ff7f00','#cab2d6',
          '#6a3d9a','#525252')
 ```
+
+
+## Business intelligence and data-driven decision making
+
+What insights can the business/organisation gain from your analysis and how will your analysis help the business/organisation make better decisions?
+
+PHS can gain insights
+
+## Domain knowledge and the business context
+
+Briefly describe the business/organisation and where your analysis fits within its aims/activity.
+
+# Data
+
+## Internal and external data sources
+
+Briefly describe your data sources and which were internal (provided by the organisation) and external (not sourced from the organisation’s data)
+
+## Types of data
+
+What kind of data did you work with? E.g. categorical and numerical data and their sub-types.
+
+## Data formats
+
+What format did your data come in? E.g. all downloaded flat files (CSV) or any data from APIs, scraping etc.
+
+## Data quality and bias
+
+Briefly describe the quality of the data and whether you have any reasons to suggest the data is biased e.g. only data from a specific demographic even though a broader demographic would be of interest to the organisation.
+
+# Ethics
+
+## Ethical issues in data sourcing and extraction
+
+Do you have any ethical concerns regarding the sourcing and extraction of your data?
+
+## Ethical implications of business requirements
+
+Are there any ethical implications of the business requirements?
+
+
+
 
 
 ```{r}
@@ -619,26 +661,6 @@ health_board_mortality %>%
   facet_wrap(~diagnosis)
 ```
 
-
-```{r}
-# health_board_mortality %>% 
-#   filter(hb_name %in% "Scotland",
-#          sex %!in% "All",
-#          age_group %!in% c("All", "under75 years"),
-#          diagnosis %!in% c("Subarachnoid Haemorrhage", 
-#                            "TIAs and related syndromes")) %>% 
-#   ggplot(aes(x = number_of_deaths, 
-#              y = age_group, 
-#              fill = sex)) +
-#   geom_col(aes(group = sex,col = "black"), position = "dodge") +
-#   scale_colour_manual(values = pal) +
-#   labs(title = "Stroke Mortality Rate in Scotland by Age Group\n",
-#        x = "Financial Year",
-#        y = "Mortality Rate \n",
-#        fill = "Gender\n") +
-#   theme(plot.title = element_text(hjust = 0.5)) +
-#   facet_wrap(~diagnosis)
-```
 
 
 ```{r}
