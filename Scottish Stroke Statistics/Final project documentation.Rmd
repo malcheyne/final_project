@@ -1,16 +1,29 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "Scottish Stroke Statistics Report"
+output: 
+pdf_document: default
+  html_document:
+    code_folding: hide
+    df_print: paged
+    toc: true
+    toc_float: true
+    number_sections: true
 ---
+<center>
+![](../images/PHS.png)
+</center>
 
-
-```{r, include=FALSE}
+```{r}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, 
+                      message = FALSE, fig.align = 'center')
 library(tidyverse)
 library(ggplot2)
 library(janitor)
 ```
 
-```{r, include=FALSE}
+```{r}
+# function and colour palettes
+
 `%!in%` <- negate(`%in%`)
 
 pal <- c("Male" = "#a6bddb", "Female" = "#fa9fb5")
@@ -26,53 +39,83 @@ hb <- c('#a6cee3','#1f78b4','#b2df8a',
 ```
 
 
+##Background
+
+Cerebrovascular disease develops as a result of problems with the blood vessels supplying oxygen rich blood
+to the brain.
+Scotland has a high prevalence of the risk factors associated with cerebrovascular disease such as smoking
+and high blood pressure. Despite a substantial decrease in rates of death over the last decade, treating and
+preventing stroke is a national clinical priority for Scotland as outlined in the Stroke Improvement Plan.
+The Information Services Division (now PHS) provides an annual update on cerebrovascular disease in
+Scotland, including stroke, brain haemorrhage and ‘mini-stroke’
+
 ## Business intelligence and data-driven decision making
 
-What insights can the business/organisation gain from your analysis and how will your analysis help the business/organisation make better decisions?
-
-PHS can gain insights
+Public Health Scotland (PHS) and NHS Scotland can gain insights in the demand in service across Scotland and the local health boards. Anomaly high/low spikes in diagnoses or mortality rates when compared to the average like crude rate can warn of local factors that need adressing/chances of false negative diagnoses.
 
 ## Domain knowledge and the business context
 
-Briefly describe the business/organisation and where your analysis fits within its aims/activity.
+Public Health Scotland (PHS) "vision is for a Scotland where everybody thrives. Focusing on prevention and early intervention, we aim to increase healthy life expectancy and reduce premature mortality by responding to the wider determinants that impact on people’s health and wellbeing."
+
+PHS provides an annual update on cerebrovascular disease in Scotland, including stroke, brain haemorrhage and ‘mini-stroke’. The data is compiled  from NHS Scotland from the local health boards and local authority.
 
 # Data
 
 ## Internal and external data sources
 
-Briefly describe your data sources and which were internal (provided by the organisation) and external (not sourced from the organisation’s data)
+All the data came from PHS, 3 that covered the diagnoses or mortality rates for the health boards and local authority where supplied from CodeClan as part of the project brief. I sourced  the codes and labels csv from the PHS website.
 
 ## Types of data
 
-What kind of data did you work with? E.g. categorical and numerical data and their sub-types.
+The data came in Character and Double class types. Change the Character to Factors for use in models and graph work.
+
+"Chr" an object that holds character strings
+
+“Fctr” Factors refers to categorical variables that have a fixed and known set of possible values.
+
+“Dbl” refers to a data type defined to hold numeric values with decimal points unlike integers that are whole numbers.
 
 ## Data formats
 
-What format did your data come in? E.g. all downloaded flat files (CSV) or any data from APIs, scraping etc.
+All data was downloaded as .CSV files
 
 ## Data quality and bias
 
-Briefly describe the quality of the data and whether you have any reasons to suggest the data is biased e.g. only data from a specific demographic even though a broader demographic would be of interest to the organisation.
+Believe that the data was good quality and wasn't biased. There is some out of date health boards identifier codes that have been replaced used in the diagnoses or mortality rates datasets that will be up-to date if re-pulled from the PHS website. The data has been aggragated to a high level so wasn't as useful as I'd hoped in making predictive models.
 
 # Ethics
 
 ## Ethical issues in data sourcing and extraction
 
-Do you have any ethical concerns regarding the sourcing and extraction of your data?
+I did not have any ethical concerns regarding the sourcing and extraction of this data. The data followed the GDPR frame work, with identifiable and non-required information removed.
 
 ## Ethical implications of business requirements
 
-Are there any ethical implications of the business requirements?
+I don't believe that there is any ethical implications from the porject requirements, as this data is being used to focusing on prevention and early intervention in people health.
 
 
 
 
+### Reading and cleaning data 
 
 ```{r}
 council_areas <- read_csv(
   "../raw_data/dz2001_codes_and_labels_21042020.csv") %>% 
   clean_names()
+
+hb_stroke <- read_csv("../raw_data/stroke_activitybyhbr.csv") %>% 
+  clean_names() %>% 
+  rename(health_board = "hbr")
+
+ca_stroke <- read_csv("../raw_data/stroke_activitybyca.csv") %>% 
+  clean_names() %>% 
+  rename(area_codes = "ca")
+
+stroke_mortality_hb <- read_csv("../raw_data/stroke_mortalitybyhbr.csv") %>% 
+  clean_names() %>% 
+  rename(health_board = "hbr")
 ```
+
 
 
 ```{r}
@@ -87,10 +130,6 @@ areas <- council_areas %>%
   unique() %>% 
   ungroup()
 
-areas
-```
-
-```{r}
 health_board <- council_areas %>% 
   select(contains("hb")) %>% 
   rename(health_board = "hb") %>% 
@@ -102,15 +141,9 @@ health_board <- council_areas %>%
   group_by(health_board, hb_name) %>% 
   unique() %>% 
   ungroup()
-
-health_board
-```
-```{r}
-hb_stroke <- read_csv("../raw_data/stroke_activitybyhbr.csv") %>% 
-  clean_names() %>% 
-  rename(health_board = "hbr")
 ```
 
+### Joining datasets togeter
 
 ```{r}
 health_board_stroke <- right_join(health_board, 
@@ -124,9 +157,28 @@ health_board_stroke <- right_join(health_board,
                             levels = c("All", "0-44 years", 
                                        "45-64 years", "65-74 years", 
                                        "under75 years", "75plus years" )))
-   # filter(is.na(hb_name))
 
-health_board_stroke
+council_stroke <- right_join(areas, ca_stroke, by = "area_codes") %>% 
+  select(council_name, financial_year, admission_type, age_group, 
+         sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
+  mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
+         financial_year = as.numeric(financial_year)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(age_group = factor(age_group, 
+                            levels = c("All", "0-44 years", 
+                                       "45-64 years", "65-74 years", 
+                                       "under75 years", "75plus years" )))
+
+health_board_mortality <- right_join(health_board, 
+                                     stroke_mortality_hb,
+                                     by = "health_board") %>% 
+  select(hb_name, year, age_group, sex, 
+         diagnosis, number_of_deaths, crude_rate, easr) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(age_group = factor(age_group, 
+                            levels = c("All", "0-44 years", 
+                                       "45-64 years", "65-74 years", 
+                                       "under75 years", "75plus years" )))
 ```
 
 # What is the most common stroke diagnosis in Scotland?
@@ -140,14 +192,20 @@ health_board_stroke %>%
              col = diagnosis)) +
   geom_point() +
   geom_line(aes(group = diagnosis)) +
-  scale_colour_manual(values = nhs) +
+  scale_colour_manual(values = nhs, 
+                      labels = c("Cerebrovascular \nDisease",
+                                 "Stroke", "Subarachnoid \nHaemorrhage",
+                                 "TIAs and \nrelated syndromes")) +
   labs(title = "Common Stroke Diagnosis in Scotland \n",
        x = "Financial Year",
        y = "Number of Discharges \n",
        colour = "Types of Strokes\n") +
   theme(plot.title = element_text(hjust = 0.5))
 ```
+<br>
 
+Cerebrovascular disease is the most common diagnosis followed by Strokess.
+<br>
 
 # Differences in stroke diagnoses between different demographics
 
@@ -155,7 +213,9 @@ health_board_stroke %>%
 health_board_stroke %>% 
   filter(hb_name %in% "Scotland",
           across(admission_type:age_group, ~.x=="All"),
-         sex %!in% "All") %>% 
+         sex %!in% "All",
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
   ggplot(aes(x = financial_year, 
              y = number_of_discharges, 
              col = sex)) +
@@ -165,16 +225,48 @@ health_board_stroke %>%
   labs(title = "Common Stroke Diagnosis in Scotland by Gender\n",
        x = "Financial Year",
        y = "Number of Discharges \n",
-       colour = "Strokes by Gender\n") +
+       colour = "Gender\n") +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
+<br>
+By Gender both male and female are quite similar diagnosis rates.
+<br>
+
+```{r}
+health_board_stroke %>% 
+  filter(hb_name %in% "Scotland",
+         sex %in% "All",
+         admission_type %in% "All",
+         age_group %!in% c("All", "under75 years"),
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
+  ggplot(aes(x = financial_year, 
+             y = number_of_discharges, 
+             col = age_group)) +
+  geom_point() +
+  geom_line(aes(group = age_group)) +
+  scale_colour_manual(values = nhs) +
+  labs(title = "Common Stroke Diagnosis in Scotland by Age Group\n",
+       x = "Financial Year",
+       y = "Number of Discharges \n",
+       colour = "Age Group\n") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~diagnosis)
+```
+<br>
+There's a more obvious difference diagnosis rates when age is taken into account. With very few under 44 being diagnosed, an increased risk from 45-74 and a higher risk above 75 age.
+<br>
+
+# Differences in stroke diagnoses between different Health Boards
 
 ```{r}
 health_board_stroke %>% 
   filter(hb_name %in% "Scotland",
           across(age_group:sex, ~.x=="All"),
-         admission_type %!in% "All") %>% 
+         admission_type %!in% "All",
+         diagnosis %!in% c("Subarachnoid Haemorrhage", 
+                           "TIAs and related syndromes")) %>% 
   ggplot(aes(x = financial_year, 
              y = number_of_discharges, 
              col = admission_type)) +
@@ -189,30 +281,9 @@ health_board_stroke %>%
   facet_wrap(~diagnosis)
 ```
 
-```{r}
-health_board_stroke %>% 
-  filter(hb_name %in% "Scotland",
-         sex %in% "All",
-         admission_type %in% "All",
-         age_group %!in% c("All", "under75 years")) %>% 
-  ggplot(aes(x = financial_year, 
-             y = number_of_discharges, 
-             col = age_group)) +
-  geom_point() +
-  geom_line(aes(group = age_group)) +
-  scale_colour_manual(values = nhs) +
-  labs(title = "Common Stroke Diagnosis in Scotland by Age Group\n",
-       x = "Financial Year",
-       y = "Number of Discharges \n",
-       colour = "Age Group\n") +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap(~diagnosis)
-```
-```{r}
-unique(health_board_stroke$hb_name)
-```
+<br>
 
-
+<br>
 ```{r}
 health_board_stroke %>% 
   filter(hb_name %!in% c("Scotland", "NHS Western Isles",
@@ -239,6 +310,12 @@ health_board_stroke %>%
 ```
 
 Omitted the NHS Western Isles, NHS Orkney, NHS Shetland, Subarachnoid Haemorrhage, TIAs and related syndromes doe to very small numbers
+
+
+
+
+
+
 
 ```{r}
 health_board_stroke %>% 
@@ -303,30 +380,6 @@ health_board_stroke %>%
 
 
 # Differences in number of cases by health board vs by local authority
-
-```{r}
-ca_stroke <- read_csv("../raw_data/stroke_activitybyca.csv") %>% 
-  clean_names() %>% 
-  rename(area_codes = "ca")
-```
-
-```{r}
-council_stroke <- right_join(areas, ca_stroke, by = "area_codes") %>% 
-  select(council_name, financial_year, admission_type, age_group, 
-         sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
-  mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
-         financial_year = as.numeric(financial_year)) %>% 
-  mutate_if(is.character, as.factor) %>% 
-  mutate(age_group = factor(age_group, 
-                            levels = c("All", "0-44 years", 
-                                       "45-64 years", "65-74 years", 
-                                       "under75 years", "75plus years" )))
-
-   # filter(is.na(council_name))
-
-council_stroke
-```
-
 
 
 ```{r}
@@ -536,65 +589,7 @@ NHS Greater Glasgow and Clyde across all the four types of strokes has an extra 
 
 
 
-
-
-```{r}
- # health_board_stroke %>% 
- #  filter(across(admission_type:sex, ~.x=="All")) %>% 
- #  group_by(hb_name, financial_year) %>% 
- #  summarise(sum_hb_discharges = sum(number_of_discharges))
-```
-
-```{r}
-# council_stroke %>% 
-#   filter(across(admission_type:sex, ~.x=="All")) %>% 
-#   group_by(hb_name, financial_year) %>% 
-#   summarise(sum_hb_discharges = sum(number_of_discharges))
-```
-
-
-
-
-
-```{r}
-unique(nhs_grampian$council_name)
-```
-
-
-
-
-
-
-
-
 # Differences in mortality rates for different types of stroke
-
-```{r}
-stroke_mortality_hb <- read_csv("../raw_data/stroke_mortalitybyhbr.csv") %>% 
-  clean_names() %>% 
-  rename(health_board = "hbr")
-```
-
-```{r}
-health_board_mortality <- right_join(health_board, 
-                                     stroke_mortality_hb,
-                                     by = "health_board") %>% 
-  select(hb_name, year, age_group, sex, 
-         diagnosis, number_of_deaths, crude_rate, easr) %>% 
-  mutate_if(is.character, as.factor) %>% 
-  mutate(age_group = factor(age_group, 
-                            levels = c("All", "0-44 years", 
-                                       "45-64 years", "65-74 years", 
-                                       "under75 years", "75plus years" )))
-  
-   # filter(is.na(hb_name))
-
-health_board_mortality
-```
-
-```{r}
-unique(health_board_mortality$age_group)
-```
 
 
 ```{r}
@@ -635,11 +630,11 @@ health_board_mortality %>%
   labs(title = "Stroke Mortality Rate in Scotland by Gender\n",
        x = "Financial Year",
        y = "Mortality Rate \n",
-       colour = "Strokes by Gender\n") +
+       colour = "Gender\n") +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
-
+While there's been a 28% decrease in cerebrovascular disease for female over this time period 
 ```{r}
 health_board_mortality %>% 
   filter(hb_name %in% "Scotland",
@@ -718,173 +713,101 @@ The crude rate per 100,000 population.
 
 NHS Grampian	2009	0-44 years	Male	Cerebrovascular Disease	1	0.615127	0.608219
 
+
+
+```{r}
 # Predict upcoming diagnoses/mortality rates for future years
 
-```{r}
-clean_health_board_mortality <- health_board_mortality %>% 
-  filter(across(age_group:sex, ~.x!="All"),
-         age_group %!in% "under75 years") %>% 
-  select(-easr) %>% 
-  na.omit()
+# clean_health_board_mortality <- health_board_mortality %>% 
+#   filter(across(age_group:sex, ~.x!="All"),
+#          age_group %!in% "under75 years") %>% 
+#   select(-easr) %>% 
+#   na.omit()
+# 
+# clean_health_board_mortality
 
-clean_health_board_mortality
+# Omitted the NHS Western Isles, NHS Orkney, NHS Shetland as they had no data on deaths.
 ```
 
-Omitted the NHS Western Isles, NHS Orkney, NHS Shetland as they had no data on deaths.
+
 
 ```{r}
-summary(clean_health_board_mortality)
+# summary(clean_health_board_mortality)
 ```
 
+
+
+```{r}
 # linear regression
 
-```{r}
-scotland_lm <- clean_health_board_mortality %>%
-  filter(hb_name %!in% "Scotland",
-         diagnosis %in% "Cerebrovascular Disease") 
-# %>% 
-#   ggplot(aes(x = year, y = number_of_deaths)) +
-#   geom_point()
-
-scotland_lm
-```
-
-data is too aggregated 
-
-```{r}
-model <- lm(number_of_deaths ~ year + sex + age_group, data = scotland_lm)
-```
-
-```{r}
-library(ggfortify)
-
-autoplot(model)
-```
-
-```{r}
-library(mosaic)
-
-plotModel(model)
-```
-
-```{r}
-summary(model)
-```
-
-```{r}
-model2 <- lm(number_of_deaths ~ sex + age_group, data = scotland_lm)
-```
-
-```{r}
-plotModel(model2)
-```
-
-```{r}
-summary(model2)
-```
-
-```{r}
-model3 <- lm(number_of_deaths ~ year + sex + age_group + year:age_group, data = scotland_lm)
-
-summary(model3)
-```
-
-```{r}
-autoplot(model3) 
-```
-
-
-```{r}
-glimpse(clean_health_board_mortality)
-```
-
-```{r}
-n_data <- nrow(clean_health_board_mortality)
-
-test_index <- sample(1:n_data, size = n_data*0.2)
-
-mortality_test <- slice(clean_health_board_mortality, test_index)
-
-mortality_train <- slice(clean_health_board_mortality, -test_index)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-# mortality_test %>% 
-#   tabyl(number_of_deaths)
-```
-
-```{r}
-# mortality_train %>% 
-#   tabyl(number_of_deaths)
-```
-
-```{r}
-# library(rpart)
-# library(rpart.plot)
+# scotland_lm <- clean_health_board_mortality %>%
+#   filter(hb_name %!in% "Scotland",
+#          diagnosis %in% "Cerebrovascular Disease") 
+# # %>% 
+# #   ggplot(aes(x = year, y = number_of_deaths)) +
+# #   geom_point()
 # 
-# mortality_fit <- rpart(
-#   formula = number_of_deaths ~ ., 
-#   data = mortality_train, 
-#   method = 'class'
-# )
+# scotland_lm
+
+# data is too aggregated 
+```
+
+
+
+```{r}
+# model <- lm(number_of_deaths ~ year + sex + age_group, data = scotland_lm)
+```
+
+```{r}
+# library(ggfortify)
 # 
-# rpart.plot(mortality_fit, 
-#            yesno = 2, 
-#            fallen.leaves = TRUE, 
-#            faclen = 6, 
-#            digits = 4)
-```
-
-
-
-```{r}
-# rpart.rules(mortality_fit, cover = TRUE)
-```
-
-
-
-
-```{r}
-# stroke_mortality_ca <- read_csv("../raw_data/stroke_mortalitybyca.csv") %>% 
-#   clean_names()
-```
-
-
-
-```{r}
-# stroke_mortalitybyca %>% 
-  
+# autoplot(model)
 ```
 
 ```{r}
-# hb_stroke <- read_csv("../raw_data/stroke_activitybyhbr.csv") %>% 
-#   clean_names() %>% 
-#   rename(health_board = "hbr")
-```
-
-
-```{r}
-# health_board_stroke <- right_join(health_board, 
-#                                   hb_stroke, 
-#                                   by = "health_board") %>% 
-#   select(hb_name, financial_year, admission_type, age_group, 
-#          sex, diagnosis, number_of_discharges, crude_rate, easr) %>%
-#   mutate(financial_year = str_sub(financial_year, start = 1, end = 4),
-#          financial_year = as.numeric(financial_year))
-#    # filter(is.na(hb_name))
+# library(mosaic)
 # 
-# health_board_stroke
+# plotModel(model)
 ```
+
+```{r}
+# summary(model)
+```
+
+```{r}
+# model2 <- lm(number_of_deaths ~ sex + age_group, data = scotland_lm)
+```
+
+```{r}
+# plotModel(model2)
+```
+
+```{r}
+# summary(model2)
+```
+
+```{r}
+# model3 <- lm(number_of_deaths ~ year + sex + age_group + year:age_group, data = scotland_lm)
+# 
+# summary(model3)
+```
+
+```{r}
+# autoplot(model3) 
+```
+
+
+```{r}
+# glimpse(clean_health_board_mortality)
+```
+
+```{r}
+# n_data <- nrow(clean_health_board_mortality)
+# 
+# test_index <- sample(1:n_data, size = n_data*0.2)
+# 
+# mortality_test <- slice(clean_health_board_mortality, test_index)
+# 
+# mortality_train <- slice(clean_health_board_mortality, -test_index)
+```
+
