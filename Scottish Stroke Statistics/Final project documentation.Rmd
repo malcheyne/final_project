@@ -90,7 +90,7 @@ All data was downloaded as .CSV files
 
 ## Data quality and bias
 
-Believe that the data was good quality and wasn't biased. There is some out of date health boards identifier codes that have been replaced used in the diagnoses or mortality rates datasets that will be up-to date if re-pulled from the PHS website. The data has been aggragated to a high level so wasn't as useful as I'd hoped in making predictive models.
+Believe that the data was good quality and wasn't biased. There is some out of date health boards identifier codes that have been replaced used in the diagnoses or mortality rates datasets that will be up-to date if re-pulled from the PHS website. The data has been aggregated to a high level so wasn't as useful as I'd hoped in making predictive models.
 
 # Ethics
 
@@ -100,7 +100,52 @@ I did not have any ethical concerns regarding the sourcing and extraction of thi
 
 ## Ethical implications of business requirements
 
-I don't believe that there is any ethical implications from the porject requirements, as this data is being used to focusing on prevention and early intervention in people health.
+I don't believe that there is any ethical implications from the project requirements, as this data is being used to focusing on prevention and early intervention in people health.
+
+# Analysis
+
+## Stages in the data analysis process
+
+Reading in of the data.  
+Cleaning the data.  
+Understanding the data.  
+Visualization of the data.
+Kitting the data.
+
+## Tools for data analysis
+
+Git/GitHub for version control
+
+R packages used:  
+tidyverse  
+ggplot2  
+janitor  
+
+## Descriptive, diagnostic, predictive and prescriptive analysis
+
+**Descriptive Analytics**  
+Time frame of the data is from 2009/10 to 2018/19
+
+**Diagnostic Analytics**  
+Shows the diagnostic and mortality rate in Scotland during that time frame.
+
+**Predictive Analytics**  
+Unable to give a good model to predicts future trends, with the data being aggregated to a high level
+
+**Prescriptive Analytics**  
+
+**Rural Focus**   
+* Focus on areas with higher mortality proportion to their population: NHS Dumfries & Galloway, Borders and Highland 
+
+**Transfer Focus**  
+* Continue to focus on treatment hubs with higher number of specialist together: NHS Glasgow, Lothian, Lanarkshire and possibly include Grampian
+
+**Gender Focus**  
+* Focus on preventative measures primarily Female.  
+* Male patients may have succumbed to other health issues, should be included in preventative measures
+
+**Preventative Age Focus**  
+* Encourage throughout adulthood: healthy diet, exercise regularly, and avoid smoking and drinking too much alcohol.
 
 
 # EDA
@@ -784,7 +829,7 @@ health_board_mortality %>%
   facet_wrap(~diagnosis)
 ```
 <br>
-The crude rate is set at per 100,000 population.
+The crude rate is set at per 100,000 population, this allows for fairer comparisons between geographies with different population totals. 
 
 Shows NHS Dumfries & Galloway, Borders and Highland now have the higher proportion of their population dieing of Cerebrovascular Disease. All are rural areas with smaller population.
 
