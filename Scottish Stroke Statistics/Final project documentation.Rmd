@@ -22,7 +22,7 @@ e.nextSibling.nextSibling.style.display="block";
 ![](../images/PHS.png)
 </center>
 
-```{r}
+```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, 
                       message = FALSE, fig.align = 'center')
 library(tidyverse)
@@ -103,9 +103,9 @@ I did not have any ethical concerns regarding the sourcing and extraction of thi
 I don't believe that there is any ethical implications from the porject requirements, as this data is being used to focusing on prevention and early intervention in people health.
 
 
+# EDA
 
-
-### Reading and cleaning data 
+## Reading and cleaning data 
 
 ```{r}
 council_areas <- read_csv(
@@ -152,7 +152,7 @@ health_board <- council_areas %>%
   ungroup()
 ```
 
-### Joining datasets togeter
+## Joining datasets togeter
 
 ```{r}
 health_board_stroke <- right_join(health_board, 
@@ -213,7 +213,24 @@ health_board_stroke %>%
 ```
 <br>
 
-Cerebrovascular disease is the most common diagnosis followed by Strokess.
+Cerebrovascular Disease: 
+Group of conditions that affect blood flow and the blood vessels in the brain
+
+Stroke: Subtype of  Cerebrovascular Disease
+
+Subarachnoid Haemorrhage: Uncommon type of stroke from burst blood vessel in the brain
+
+TIAs and related syndromes: Temporary period of similar symptoms 
+
+From 2009/10 - 2018/19
+
+Cerebrovascular Disease:  
+* 30% increase in diagnosis cases
+
+Stroke:  
+* 36% increase in diagnosis cases
+ 
+
 <br>
 
 # Differences in stroke diagnoses between different demographics
@@ -239,7 +256,11 @@ health_board_stroke %>%
   facet_wrap(~diagnosis)
 ```
 <br>
-By Gender both male and female are quite similar diagnosis rates.
+Focusing on the two main types of Strokes. 
+
+Both genders have similar numbers of diagnosis, with Females higher than Males.
+
+
 <br>
 
 ```{r}
@@ -264,7 +285,9 @@ health_board_stroke %>%
   facet_wrap(~diagnosis)
 ```
 <br>
-There's a more obvious difference diagnosis rates when age is taken into account. With very few under 44 being diagnosed, an increased risk from 45-74 and a higher risk above 75 age.
+There's a more obvious difference diagnosis rates when age is taken into account. 
+
+very few under 44 being diagnosed, an increased risk from 45-74 and a higher risk above 75 age.
 <br>
 
 # Differences in stroke diagnoses between different Health Boards
@@ -291,6 +314,13 @@ health_board_stroke %>%
 ```
 
 <br>
+High number of cases require the transfer of the patient from an Health Board to another.
+
+Health Boards with specialist hub or more space for treatment take these extra patients.
+
+The rate of transfer has increased 55% Cerebrovascular Disease and 59%  Stroke in this time frame.
+
+Will compare to the mortality rates later.
 
 <br>
 ```{r}
@@ -318,13 +348,14 @@ health_board_stroke %>%
   facet_wrap(~diagnosis)
 ```
 
-Omitted the NHS Western Isles, NHS Orkney, NHS Shetland, Subarachnoid Haemorrhage, TIAs and related syndromes doe to very small numbers
+<br>
+Both NHS Glasgow and Lanarkshire increase coincides with patient being transfer there. 
 
+NHS Lothian and other Health Boards have similar numbers throughout, suggesting transfer where for more treatment space.
 
+Omitted the NHS Western Isles, NHS Orkney, NHS Shetland due to them having almost no cases, transfer cases to the mainland. 
 
-
-
-
+<br>
 
 ```{r}
 health_board_stroke %>% 
@@ -368,29 +399,27 @@ health_board_stroke %>%
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
-
-
-
-
-  "NHS Grampian" : Aberdeen, Aberdeenshire and Moray. 
-  
- "NHS Tayside" :  Angus, the City of Dundee and Perth and Kinross.
- 
- NHS Forth Valley : Clackmannanshire, Falkirk and Stirling 
- 
-"NHS Ayrshire and Arran" : North Ayrshire South Ayrshire East Ayrshire
-
- "NHS Lothian" : City of Edinburgh, East Lothian, Midlothian and West Lothian 
- 
- NHS Greater Glasgow and Clyde : City of Glasgow, East Dunbartonshire, East Renfrewshire, Inverclyde, Renfrewshire and West Dunbartonshire. 
- 
- NHS Lanarkshire : North Lanarkshire and South Lanarkshire
-
-
-
 # Differences in number of cases by health board vs by local authority
 
 
+Some disparity in the data between the total cases across the local authority’s compared to the Health board.
+
+Health board with more than one local authority.
+
+NHS Grampian : Aberdeen, Aberdeenshire and Moray. 
+  
+NHS Tayside :  Angus, the City of Dundee and Perth and Kinross.
+ 
+NHS Forth Valley : Clackmannanshire, Falkirk and Stirling 
+ 
+NHS Ayrshire and Arran : North Ayrshire South Ayrshire East Ayrshire
+
+NHS Lothian : City of Edinburgh, East Lothian, Midlothian and West Lothian 
+ 
+NHS Greater Glasgow and Clyde : City of Glasgow, East Dunbartonshire, East Renfrewshire, Inverclyde, Renfrewshire and West Dunbartonshire. 
+ 
+NHS Lanarkshire : North Lanarkshire and South Lanarkshire
+<br>
 ```{r}
 grampian <- health_board_stroke %>% 
   filter(hb_name %in% "NHS Grampian",
@@ -596,7 +625,7 @@ health_board_stroke %>%
 
 NHS Greater Glasgow and Clyde across all the four types of strokes has an extra 3, 0.02% in 2016/17, an extra 14, 0.08% in 2017/18 and an extra 86, 0.5% in 2018/19 compared to the local authority's
 
-
+Very small number of cases and predominantly in the last few years of the timeframe.
 
 # Differences in mortality rates for different types of stroke
 
@@ -619,8 +648,20 @@ health_board_mortality %>%
        colour = "Types of Strokes\n") +
   theme(plot.title = element_text(hjust = 0.5)) 
 ```
+Cerebrovascular Disease:   
+Mortality Rate down 22%   
+* 19% of the diagnosis in 2009/10  
+* 11% of the diagnosis in 2018/19
 
-Again Subarachnoid Haemorrhage, TIAs and related syndromes very small numbers so will leave out.
+Stroke:   
+Mortality Rate down 24%   
+* 15% of the diagnosis in 2009/10  
+* 8% of the diagnosis in 2018/19  
+
+Subarachnoid Haemorrhage:   
+Mortality Rate down 22%   
+* 13% of the diagnosis in 2009/10  
+* 8% of the diagnosis in 2018/19   
 
 
 ```{r}
@@ -643,7 +684,23 @@ health_board_mortality %>%
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
-While there's been a 28% decrease in cerebrovascular disease for female over this time period 
+
+
+Cerebrovascular Disease:   
+Female:   
+Mortality Rate down 28%   
+Male:  
+Mortality Rate down 11%   
+
+Stroke:   
+Female:  
+Mortality Rate down 29%   
+Male:  
+Mortality Rate down 14%   
+
+
+While genders have similar numbers of diagnosis, Female make a high number of the deaths.
+
 ```{r}
 health_board_mortality %>% 
   filter(hb_name %in% "Scotland",
@@ -664,8 +721,11 @@ health_board_mortality %>%
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
+<br>
+Predominantly the deaths are from patients over 75 years old. The Mortality Rate of has followed the 22% and 24% decrease respectively.
 
-
+The other age groups show between 15-26% decrease
+<br>
 
 ```{r}
 health_board_mortality %>% 
@@ -691,6 +751,13 @@ health_board_mortality %>%
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
+<br>
+NHS Glasgow has the highest Mortality numbers. 
+
+The other Health Boards follow a  similar order to the diagnosis data, just NHS Grampian has grouped  with Lothian and Lanarkshire.
+
+All the island Health Boards had no Mortality data due to them having transfer cases to the mainland. 
+<br>
 
 ```{r}
 health_board_mortality %>% 
@@ -716,15 +783,32 @@ health_board_mortality %>%
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~diagnosis)
 ```
+<br>
+The crude rate is set at per 100,000 population.
 
-The crude rate per 100,000 population.
+Shows NHS Dumfries & Galloway, Borders and Highland now have the higher proportion of their population dieing of Cerebrovascular Disease. All are rural areas with smaller population.
+
+NHS Lothian has the best proportion for both types of Strokes. 
+<br>
+
+# Proposed Focus Areas
+
+### Rural Focus
+* Focus on areas with higher mortality proportion to their population: NHS Dumfries & Galloway, Borders and Highland 
+
+### Transfer Focus
+* Continue to focus on treatment hubs with higher number of specialist together: NHS Glasgow, Lothian, Lanarkshire and possibly include Grampian
+
+### Gender Focus
+* Focus on preventative measures primarily Female.  
+* Male patients may have succumbed to other health issues, should be included in preventative measures
+
+### Preventative Age Focus
+* Encourage throughout adulthood: healthy diet, exercise regularly, and avoid smoking and drinking too much alcohol.
 
 
-NHS Grampian	2009	0-44 years	Male	Cerebrovascular Disease	1	0.615127	0.608219
 
-
-
-```{r}
+```{r, include=FALSE}
 # Predict upcoming diagnoses/mortality rates for future years
 
 # clean_health_board_mortality <- health_board_mortality %>% 
@@ -740,13 +824,13 @@ NHS Grampian	2009	0-44 years	Male	Cerebrovascular Disease	1	0.615127	0.608219
 
 
 
-```{r}
+```{r, include=FALSE}
 # summary(clean_health_board_mortality)
 ```
 
 
 
-```{r}
+```{r, include=FALSE}
 # linear regression
 
 # scotland_lm <- clean_health_board_mortality %>%
@@ -763,50 +847,50 @@ NHS Grampian	2009	0-44 years	Male	Cerebrovascular Disease	1	0.615127	0.608219
 
 
 
-```{r}
+```{r, include=FALSE}
 # model <- lm(number_of_deaths ~ year + sex + age_group, data = scotland_lm)
 ```
 
-```{r}
+```{r, include=FALSE}
 # library(ggfortify)
 # 
 # autoplot(model)
 ```
 
-```{r}
+```{r, include=FALSE}
 # library(mosaic)
 # 
 # plotModel(model)
 ```
 
-```{r}
+```{r, include=FALSE}
 # summary(model)
 ```
 
-```{r}
+```{r, include=FALSE}
 # model2 <- lm(number_of_deaths ~ sex + age_group, data = scotland_lm)
 ```
 
-```{r}
+```{r, include=FALSE}
 # plotModel(model2)
 ```
 
-```{r}
+```{r, include=FALSE}
 # summary(model2)
 ```
 
-```{r}
+```{r, include=FALSE}
 # model3 <- lm(number_of_deaths ~ year + sex + age_group + year:age_group, data = scotland_lm)
 # 
 # summary(model3)
 ```
 
-```{r}
+```{r, include=FALSE}
 # autoplot(model3) 
 ```
 
 
-```{r}
+```{r, include=FALSE}
 # glimpse(clean_health_board_mortality)
 ```
 
