@@ -1,4 +1,6 @@
-# final_project
+# Final Project
+
+# Scottish Stroke Statistics
 
 ![](images/readme_images/scottish_stroke_statistics.png)
 
