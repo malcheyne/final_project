@@ -2,7 +2,7 @@
 
 # Scottish Stroke Statistics
 
-Gave a presentation and report using PHS data for Strokes in Scotland between 2009/10 and 2018/19 financial years. Below is a copy of the presentation, the report is in the next folder.
+Gave a presentation and report using PHS data for Strokes in Scotland between 2009/10 and 2018/19 financial years. Below is a copy of the presentation, the report is in the Scottish Stroke Statistics folder.
 
 ![](images/readme_images/scottish_stroke_statistics.png)
 
